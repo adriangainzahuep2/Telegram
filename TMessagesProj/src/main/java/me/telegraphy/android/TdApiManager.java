@@ -1,5 +1,9 @@
 package me.telegraphy.android;
 
+import android.content.Context;
+
+import com.google.gson.Gson;
+
 import org.drinkless.td.libcore.telegram.Client;
 import org.drinkless.td.libcore.telegram.TdApi;
 import org.telegram.messenger.AndroidUtilities;
@@ -18,6 +22,8 @@ public class TdApiManager {
     private static final AtomicLong currentQueryId = new AtomicLong();
 
     private static final String TAG = "TdApiManager";
+    private static DatabaseManager databaseManager;
+    private static Gson gson;
 
     private static final Client.ResultHandler defaultHandler = new Client.ResultHandler() {
         @Override
@@ -30,6 +36,9 @@ public class TdApiManager {
         if (client == null) {
             synchronized (TdApiManager.class) {
                 if (client == null) {
+                    Context context = ApplicationLoader.applicationContext;
+                    databaseManager = DatabaseManager.getInstance(context);
+                    gson = new Gson();
                     // Esto es una configuración básica. Se necesitará una configuración más detallada
                     // basada en AndroidUtilities.java y las necesidades de la aplicación.
                     Client.setLogVerbosityLevel(1); // Ajustar según sea necesario
@@ -44,8 +53,22 @@ public class TdApiManager {
     private static class UpdatesHandler implements Client.ResultHandler {
         @Override
         public void onResult(TdApi.Object object) {
-            if (object instanceof TdApi.UpdateAuthorizationState) {
-                onAuthorizationStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
+            switch (object.getConstructor()) {
+                case TdApi.UpdateAuthorizationState.CONSTRUCTOR:
+                    onAuthorizationStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
+                    break;
+                case TdApi.UpdateNewChat.CONSTRUCTOR:
+                    TdApi.Chat chat = ((TdApi.UpdateNewChat) object).chat;
+                    databaseManager.addChat(chat.id, gson.toJson(chat));
+                    break;
+                case TdApi.UpdateNewMessage.CONSTRUCTOR:
+                    TdApi.Message message = ((TdApi.UpdateNewMessage) object).message;
+                    databaseManager.addMessage(message.id, message.chatId, gson.toJson(message));
+                    break;
+                case TdApi.UpdateUser.CONSTRUCTOR:
+                    TdApi.User user = ((TdApi.UpdateUser) object).user;
+                    databaseManager.addUser(user.id, gson.toJson(user));
+                    break;
             }
             // Aquí se manejarían todas las demás actualizaciones de TDLib (nuevos mensajes, etc.)
             // FileLog.d(TAG + ": Update received: " + object.toString());
@@ -167,6 +190,9 @@ public class TdApiManager {
             public void onResult(TdApi.Object object) {
                 if (object instanceof TdApi.Chats) {
                     TdApi.Chats chats = (TdApi.Chats) object;
+                    for (long chatId : chats.chatIds) {
+                        getChat(chatId, null);
+                    }
                     FileLog.d(TAG + ": Received " + chats.chatIds.length + " chats.");
                     // Aquí se procesarían los chats, se guardarían en la BD, y se notificaría a la UI
                     // DatabaseManager.getInstance().addChats(chats); // Ejemplo
@@ -174,6 +200,29 @@ public class TdApiManager {
                 }
             }
         });
+    }
+
+    public static void getChat(long chatId, Client.ResultHandler resultHandler) {
+        send(new TdApi.GetChat(chatId), new Client.ResultHandler() {
+            @Override
+            public void onResult(TdApi.Object object) {
+                if (object instanceof TdApi.Chat) {
+                    TdApi.Chat chat = (TdApi.Chat) object;
+                    databaseManager.addChat(chat.id, gson.toJson(chat));
+                }
+                if (resultHandler != null) {
+                    resultHandler.onResult(object);
+                }
+            }
+        });
+    }
+
+    public static TdApi.Chat getChatFromDb(long chatId) {
+        String chatJson = databaseManager.getChat(chatId);
+        if (chatJson != null) {
+            return gson.fromJson(chatJson, TdApi.Chat.class);
+        }
+        return null;
     }
 
     public static void getChatHistory(long chatId, long fromMessageId, int offset, int limit, boolean onlyLocal, Client.ResultHandler resultHandler) {
