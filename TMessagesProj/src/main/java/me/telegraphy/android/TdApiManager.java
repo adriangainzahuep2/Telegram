@@ -659,14 +659,17 @@ public class TdApiManager {
 
     private void handleBasicGroupUpdate(TdApi.UpdateBasicGroup update) {
         basicGroups.put(update.basicGroup.id, update.basicGroup);
+        databaseManager.addBasicGroup(update.basicGroup.id, gson.toJson(update.basicGroup));
     }
 
     private void handleSupergroupUpdate(TdApi.UpdateSupergroup update) {
         supergroups.put(update.supergroup.id, update.supergroup);
+        databaseManager.addSupergroup(update.supergroup.id, gson.toJson(update.supergroup));
     }
 
     private void handleSecretChatUpdate(TdApi.UpdateSecretChat update) {
         secretChats.put(update.secretChat.id, update.secretChat);
+        databaseManager.addSecretChat(update.secretChat.id, gson.toJson(update.secretChat));
     }
 
     private void handleCallUpdate(TdApi.UpdateCall update) {
@@ -1683,7 +1686,15 @@ public class TdApiManager {
      * Obtiene un chat del cache.
      */
     public TdApi.Chat getChat(long chatId) {
-        return chats.get(chatId);
+        TdApi.Chat chat = chats.get(chatId);
+        if (chat == null) {
+            String chatJson = databaseManager.getChat(chatId);
+            if (chatJson != null) {
+                chat = gson.fromJson(chatJson, TdApi.Chat.class);
+                chats.put(chatId, chat);
+            }
+        }
+        return chat;
     }
 
     /**
@@ -1705,21 +1716,45 @@ public class TdApiManager {
      * Obtiene un grupo básico del cache.
      */
     public TdApi.BasicGroup getBasicGroup(long groupId) {
-        return basicGroups.get(groupId);
+        TdApi.BasicGroup basicGroup = basicGroups.get(groupId);
+        if (basicGroup == null) {
+            String basicGroupJson = databaseManager.getBasicGroup(groupId);
+            if (basicGroupJson != null) {
+                basicGroup = gson.fromJson(basicGroupJson, TdApi.BasicGroup.class);
+                basicGroups.put(groupId, basicGroup);
+            }
+        }
+        return basicGroup;
     }
 
     /**
      * Obtiene un supergrupo del cache.
      */
     public TdApi.Supergroup getSupergroup(long supergroupId) {
-        return supergroups.get(supergroupId);
+        TdApi.Supergroup supergroup = supergroups.get(supergroupId);
+        if (supergroup == null) {
+            String supergroupJson = databaseManager.getSupergroup(supergroupId);
+            if (supergroupJson != null) {
+                supergroup = gson.fromJson(supergroupJson, TdApi.Supergroup.class);
+                supergroups.put(supergroupId, supergroup);
+            }
+        }
+        return supergroup;
     }
 
     /**
      * Obtiene un chat secreto del cache.
      */
     public TdApi.SecretChat getSecretChat(long secretChatId) {
-        return secretChats.get(secretChatId);
+        TdApi.SecretChat secretChat = secretChats.get(secretChatId);
+        if (secretChat == null) {
+            String secretChatJson = databaseManager.getSecretChat(secretChatId);
+            if (secretChatJson != null) {
+                secretChat = gson.fromJson(secretChatJson, TdApi.SecretChat.class);
+                secretChats.put(secretChatId, secretChat);
+            }
+        }
+        return secretChat;
     }
 
     /**
@@ -1792,3 +1827,7 @@ public class TdApiManager {
     }
 
 }
+
+     Esta es la clase que quiero que integres, me habia equivocado anteriormente porque faltaba la implementacion ampliada de la clase TdApiManager.java, extend la clase DatabaseManager.java y agrega las tablas que faltan a partir de la clase TdAPIManager.java, y los metodos CRUD necesarios para integrarse con TdApiManager.java. En resumen, borra la clase TdApiManager.java anterior y copia esta clase que te estoy dando aqui, luego integrala con DatabaseManager.java, agregando a DatabaseManager.java todas las nuevas tablas a partir de las entidades que aparecen TdApiManager.java para utilizar tDLib Library acorde a Telegram Android Codebase como te muestro aqui.
+
+You **must** respond now, using the `message_user` tool.

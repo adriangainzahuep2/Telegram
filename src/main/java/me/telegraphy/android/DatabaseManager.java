@@ -46,6 +46,9 @@ public class DatabaseManager {
             db.execSQL("CREATE TABLE users (id INTEGER PRIMARY KEY, data TEXT)");
             db.execSQL("CREATE TABLE chats (id INTEGER PRIMARY KEY, data TEXT)");
             db.execSQL("CREATE TABLE messages (id INTEGER PRIMARY KEY, chatId INTEGER, data TEXT)");
+            db.execSQL("CREATE TABLE basic_groups (id INTEGER PRIMARY KEY, data TEXT)");
+            db.execSQL("CREATE TABLE supergroups (id INTEGER PRIMARY KEY, data TEXT)");
+            db.execSQL("CREATE TABLE secret_chats (id INTEGER PRIMARY KEY, data TEXT)");
         }
 
         @Override
@@ -54,6 +57,9 @@ public class DatabaseManager {
             db.execSQL("DROP TABLE IF EXISTS users");
             db.execSQL("DROP TABLE IF EXISTS chats");
             db.execSQL("DROP TABLE IF EXISTS messages");
+            db.execSQL("DROP TABLE IF EXISTS basic_groups");
+            db.execSQL("DROP TABLE IF EXISTS supergroups");
+            db.execSQL("DROP TABLE IF EXISTS secret_chats");
             onCreate(db);
         }
     }
@@ -127,5 +133,71 @@ public class DatabaseManager {
 
     public void deleteMessage(long id) {
         database.delete("messages", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    // BasicGroup operations
+    public void addBasicGroup(long id, String data) {
+        ContentValues values = new ContentValues();
+        values.put("id", id);
+        values.put("data", data);
+        database.replace("basic_groups", null, values);
+    }
+
+    public String getBasicGroup(long id) {
+        Cursor cursor = database.query("basic_groups", new String[]{"data"}, "id = ?", new String[]{String.valueOf(id)}, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            String data = cursor.getString(0);
+            cursor.close();
+            return data;
+        }
+        return null;
+    }
+
+    public void deleteBasicGroup(long id) {
+        database.delete("basic_groups", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    // Supergroup operations
+    public void addSupergroup(long id, String data) {
+        ContentValues values = new ContentValues();
+        values.put("id", id);
+        values.put("data", data);
+        database.replace("supergroups", null, values);
+    }
+
+    public String getSupergroup(long id) {
+        Cursor cursor = database.query("supergroups", new String[]{"data"}, "id = ?", new String[]{String.valueOf(id)}, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            String data = cursor.getString(0);
+            cursor.close();
+            return data;
+        }
+        return null;
+    }
+
+    public void deleteSupergroup(long id) {
+        database.delete("supergroups", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    // SecretChat operations
+    public void addSecretChat(long id, String data) {
+        ContentValues values = new ContentValues();
+        values.put("id", id);
+        values.put("data", data);
+        database.replace("secret_chats", null, values);
+    }
+
+    public String getSecretChat(long id) {
+        Cursor cursor = database.query("secret_chats", new String[]{"data"}, "id = ?", new String[]{String.valueOf(id)}, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            String data = cursor.getString(0);
+            cursor.close();
+            return data;
+        }
+        return null;
+    }
+
+    public void deleteSecretChat(long id) {
+        database.delete("secret_chats", "id = ?", new String[]{String.valueOf(id)});
     }
 }
